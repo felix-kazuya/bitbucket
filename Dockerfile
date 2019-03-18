@@ -22,4 +22,4 @@ echo 'app.defaultInstallDir=/opt/atlassian/bitbucket' >> response.varfile.bitbuc
 EXPOSE 8080
 EXPOSE 8006
 
-CMD [ "/opt/atlassian/bitbucket/bin/start-bitbucket.sh -fg" ]
+CMD [ "/opt/atlassian/bitbucket/bin/start-bitbucket.sh","-fg" ]
