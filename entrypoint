@@ -102,7 +102,9 @@ keytool -genkey -noprompt \
   -keypass "$keystorePassword" \
   -keyalg RSA \
   -keysize 2048 \
-  -validity 365
+  -validity 365 \
+  -deststoretype pkcs12
+
 
 echo "bitbucket.properties: update keystore password"
 sed -i "s|server.additional-connector.1.ssl.key-store-password=.*$|server.additional-connector.1.ssl.key-store-password=$keystorePassword|" $PROPERTIESFILE
@@ -113,9 +115,6 @@ set -e
 ########################################
 ###### Update JAVA Keystore ############
 ########################################
-$keystorePassword
-$_workdir/shared/config/ssl-keystore
-
 #import trusted CAs
 for i in $(ls /sslimport)
 do
