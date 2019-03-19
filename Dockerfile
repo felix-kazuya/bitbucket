@@ -4,9 +4,9 @@ FROM $IMAGE:$TAG
 MAINTAINER Christian Walonka <christian@walonka.de>
 MAINTAINER Christian Walonka <cwalonka@it-economics.de>
 
-ARG INSTALLDIR = /opt/atlassian/bitbucket'
-ARG BITBUCKETVERSION = 'atlassian-bitbucket-6.1.1-x64.bin'
-ARG DOWNLOADPATH = 'http://www.atlassian.com/software/stash/downloads/binary'
+ARG INSTALLDIR=/opt/atlassian/bitbucket
+ARG BITBUCKETVERSION=atlassian-bitbucket-6.1.1-x64.bin
+ARG DOWNLOADPATH=http://www.atlassian.com/software/stash/downloads/binary
 
 
 ENV REFRESHED_AT 2019-03-04
