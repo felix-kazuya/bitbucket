@@ -5,6 +5,7 @@ MAINTAINER Christian Walonka <christian@walonka.de>
 MAINTAINER Christian Walonka <cwalonka@it-economics.de>
 
 ARG INSTALLDIR=/opt/atlassian/bitbucket
+ENV INSTALLDIR=${INSTALLDIR}
 ARG BITBUCKETVERSION=atlassian-bitbucket-6.1.1-x64.bin
 ARG DOWNLOADPATH=http://www.atlassian.com/software/stash/downloads/binary
 
@@ -25,8 +26,10 @@ echo 'app.defaultInstallDir=/opt/atlassian/bitbucket' >> response.varfile.bitbuc
 ln -n /usr/share/java/mysql-connector-java.jar $INSTALLDIR/lib/mysql-connector-java.jar
 
 
-EXPOSE 8080 #New HTTP Port
-EXPOSE 8006 #SSH-Port
-EXPOSE 7990 #Default HTTP Port
+EXPOSE 8080
+EXPOSE 8006
+EXPOSE 7990
 
+COPY entrypoint /entrypoint
+RUN chmod +x /entrypoint
 CMD [ "/entrypoint" ]

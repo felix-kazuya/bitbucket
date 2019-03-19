@@ -11,7 +11,6 @@ PROPERTIESFILE="$_workdir/shared/bitbucket.properties"
 
 mkdir -p $_workdir/lib/
 cp /usr/share/java/mysql-connector-java.jar $_workdir/lib/
-chown $_user $_workdir
 
 set +e
 
@@ -118,14 +117,17 @@ set -e
 #import trusted CAs
 for i in $(ls /sslimport)
 do
-	echo "importing $i"
-	keytool -import -trustcacerts -file /sslimport/$i -alias $i -keystore $_workdir/shared/config/ssl-keystore -storepass $keystorePassword -noprompt
-	keytool -import -trustcacerts -file /sslimport/$i -alias $i -storepass changeit -noprompt
+  echo "importing $i"
+  keytool -import -trustcacerts -file /sslimport/$i -alias $i -keystore $_workdir/shared/config/ssl-keystore -storepass $keystorePassword -noprompt
+  keytool -import -trustcacerts -file /sslimport/$i -alias $i -storepass changeit -noprompt
 done
 
 
 ########################################
 ###### System Startup ##################
 ########################################
+
+chown -R $_user:$_user $_workdir
+
 
 $INSTALL/bin/start-bitbucket.sh -fg
