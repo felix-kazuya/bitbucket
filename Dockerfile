@@ -29,4 +29,4 @@ EXPOSE 8080 #New HTTP Port
 EXPOSE 8006 #SSH-Port
 EXPOSE 7990 #Default HTTP Port
 
-CMD [ "/opt/atlassian/bitbucket/bin/start-bitbucket.sh","-fg" ]
+CMD [ "/entrypoint" ]
