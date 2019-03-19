@@ -1,0 +1,132 @@
+#!/bin/bash
+set -e
+
+INSTALL=$INSTALLDIR
+
+_user=$(grep "BITBUCKET_USER=" $INSTALL/bin/set-bitbucket-user.sh | awk -F'=' '{print $2}' | awk '{print $1}' | awk -F'"' '{print $2}')
+_workdir=$(grep "BITBUCKET_HOME=\"/" $INSTALL/bin/set-bitbucket-home.sh | cut -f2 -d"=")
+_workdir="${_workdir//\"}"
+
+PROPERTIESFILE="$_workdir/shared/bitbucket.properties"
+
+mkdir -p $_workdir/lib/
+cp /usr/share/java/mysql-connector-java.jar $_workdir/lib/
+chown $_user $_workdir
+
+set +e
+
+if ! [ -z $PROXY ] ; then
+  echo "Proxy is set!"
+
+  # Split to get protocol and fqdn
+  proto="$(echo $PROXY | grep :// | sed -e's,^\(.*://\).*,\1,g' | cut -d':' -f1)"
+  # default to https
+  if [ -z $proto ] ; then
+    proto=https
+  fi
+  # remove the protocol
+  url=$(echo $PROXY | sed -e "s,^$proto://,,")
+
+  case $proto in
+    http)
+      port=80
+    ;;
+    https)
+      port=443
+    ;;
+    *)
+      echo "Protocol $proto not supported. Only http and https are valid!"
+      exit 1
+    ;;
+  esac
+
+  echo "serverconfig: Updating proxyName, proxyPort and scheme in //Connector"
+  sed -i '/^#PROXY/d' $PROPERTIESFILE
+  sed -i '/^server.secure/d' $PROPERTIESFILE
+  sed -i '/^server.port/d' $PROPERTIESFILE
+  sed -i '/^server.proxy-port/d' $PROPERTIESFILE
+  sed -i '/^server.proxy-name/d' $PROPERTIESFILE
+
+  echo "#PROXY" >> $PROPERTIESFILE
+  echo "server.secure=true" >> $PROPERTIESFILE
+  echo "server.port=8080" >> $PROPERTIESFILE
+  echo "server.proxy-port=443" >> $PROPERTIESFILE
+  echo "server.proxy-name=$url" >> $PROPERTIESFILE
+
+########################################
+###### SSL Handling ####################
+########################################
+
+  if [[ $proto == "https" ]] ; then
+    echo "bitbucket.properties: clear old ssl connector"
+    sed -i "/server.proxy-port=443/d" $PROPERTIESFILE
+    sed -i "/server.require-ssl=true/d" $PROPERTIESFILE
+    sed -i "/server.redirect-port=443/d" $PROPERTIESFILE
+    sed -i "/server.proxy-name=.*$/d" $PROPERTIESFILE
+    sed -i "/server.additional-connector.1.*$/d" $PROPERTIESFILE
+
+    echo "bitbucket.properties: add ssl connector "
+    # remove config
+    echo "server.require-ssl=true" >> $PROPERTIESFILE
+    echo "server.redirect-port=443" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.port=8443" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.secure=true" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.scheme=https" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.proxy-port=443" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.ssl.enabled=true" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.ssl.client-auth=want" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.ssl.protocol=TLSv1.2" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.ssl.key-store=/var/atlassian/application-data/bitbucket/shared/config/ssl-keystore/.keystore" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.ssl.key-store-password=Def12345" >> $PROPERTIESFILE
+    echo "server.additional-connector.1.ssl.key-password=Def12345" >> $PROPERTIESFILE
+
+  fi
+fi
+
+###  Generate SSL certificate
+# Remove current keystore
+#rm $INSTALL/atlassian-bitbucket/.keystore
+rm -r $_workdir/shared/config/ssl-keystore
+mkdir -p $_workdir/shared/config/ssl-keystore
+
+# Generate random password for private key
+if [ -z "$keystorePassword" ]; then
+  keystorePassword=$(openssl rand 16 | base64)
+fi
+echo ".keystore: Generate new keystore for https"
+keytool -genkey -noprompt \
+  -alias tomcat \
+  -dname "CN=localhost, OU=unknown, O=unknown, L=unknown, S=unknown, C=DE" \
+  -keystore "/var/atlassian/application-data/bitbucket/shared/config/ssl-keystore/.keystore" \
+  -storepass "$keystorePassword" \
+  -keypass "$keystorePassword" \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 365
+
+echo "bitbucket.properties: update keystore password"
+sed -i "s|server.additional-connector.1.ssl.key-store-password=.*$|server.additional-connector.1.ssl.key-store-password=$keystorePassword|" $PROPERTIESFILE
+sed -i "s|server.additional-connector.1.ssl.key-password=.*$|server.additional-connector.1.ssl.key-password=$keystorePassword|" $PROPERTIESFILE
+
+set -e
+
+########################################
+###### Update JAVA Keystore ############
+########################################
+$keystorePassword
+$_workdir/shared/config/ssl-keystore
+
+#import trusted CAs
+for i in $(ls /sslimport)
+do
+	echo "importing $i"
+	keytool -import -trustcacerts -file /sslimport/$i -alias $i -keystore $_workdir/shared/config/ssl-keystore -storepass $keystorePassword -noprompt
+	keytool -import -trustcacerts -file /sslimport/$i -alias $i -storepass changeit -noprompt
+done
+
+
+########################################
+###### System Startup ##################
+########################################
+
+$INSTALL/bin/start-bitbucket.sh -fg
