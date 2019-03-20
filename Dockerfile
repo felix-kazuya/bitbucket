@@ -29,9 +29,8 @@ echo 'app.defaultInstallDir=/opt/atlassian/bitbucket' >> response.varfile.bitbuc
 ln -n /usr/share/java/mysql-connector-java.jar $INSTALLDIR/lib/mysql-connector-java.jar
 
 
-EXPOSE 8080
-EXPOSE 8006
-EXPOSE 7990
+EXPOSE $SERVERPORT
+EXPOSE $SSHSERVERPORT
 
 COPY entrypoint /entrypoint
 RUN chmod +x /entrypoint
