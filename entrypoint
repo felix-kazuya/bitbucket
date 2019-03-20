@@ -11,6 +11,11 @@ PROPERTIESFILE="$_workdir/shared/bitbucket.properties"
 
 mkdir -p $_workdir/lib/
 cp /usr/share/java/mysql-connector-java.jar $_workdir/lib/
+mkdir -p $_workdir/shared/
+touch $PROPERTIESFILE
+sed -i "/server.port/d" $PROPERTIESFILE
+echo "server.port=$SERVERPORT" >> $PROPERTIESFILE
+
 
 set +e
 
@@ -38,6 +43,8 @@ if ! [ -z $PROXY ] ; then
       exit 1
     ;;
   esac
+
+  touch 
 
   echo "serverconfig: Updating proxyName, proxyPort and scheme in //Connector"
   sed -i '/^#PROXY/d' $PROPERTIESFILE
