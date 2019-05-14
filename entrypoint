@@ -52,6 +52,11 @@ if ! [ -z $PROXY ] ; then
   sed -i '/^server.port/d' $PROPERTIESFILE
   sed -i '/^server.proxy-port/d' $PROPERTIESFILE
   sed -i '/^server.proxy-name/d' $PROPERTIESFILE
+  
+  # remove old ssl settings
+  sed -i "/server.additional-connector.1.*$/d" $PROPERTIESFILE
+  sed -i "/server.require-ssl/d" $PROPERTIESFILE
+  sed -i "/server.redirect-port/d" $PROPERTIESFILE
 
   echo "#PROXY" >> $PROPERTIESFILE
   echo "server.secure=false" >> $PROPERTIESFILE
@@ -65,7 +70,8 @@ if ! [ -z $PROXY ] ; then
 
   if [[ $proto == "https" ]] ; then
     echo "bitbucket.properties: clear old ssl connector"
-    sed -i "/server.proxy-port=443/d" $PROPERTIESFILE
+    sed -i "/server.secure/d" $PROPERTIESFILE
+    sed -i "/server.proxy-port/d" $PROPERTIESFILE
     sed -i "/server.require-ssl=true/d" $PROPERTIESFILE
     sed -i "/server.redirect-port=443/d" $PROPERTIESFILE
     sed -i "/server.proxy-name=.*$/d" $PROPERTIESFILE
@@ -73,6 +79,9 @@ if ! [ -z $PROXY ] ; then
 
     echo "bitbucket.properties: add ssl connector "
     # remove config
+    echo "server.secure=true" >> $PROPERTIESFILE
+    echo "server.proxy-port=$port" >> $PROPERTIESFILE
+    echo "server.proxy-name=$url" >> $PROPERTIESFILE
     echo "server.require-ssl=true" >> $PROPERTIESFILE
     echo "server.redirect-port=443" >> $PROPERTIESFILE
     echo "server.additional-connector.1.port=8443" >> $PROPERTIESFILE
