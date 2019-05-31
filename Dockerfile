@@ -6,7 +6,7 @@ MAINTAINER Christian Walonka <cwalonka@it-economics.de>
 
 ARG INSTALLDIR=/opt/atlassian/bitbucket
 ENV INSTALLDIR=${INSTALLDIR}
-ARG BITBUCKETVERSION=atlassian-bitbucket-6.1.1-x64.bin
+ARG BITBUCKETVERSION=atlassian-bitbucket-6.3.1-x64.bin
 ARG DOWNLOADPATH=http://www.atlassian.com/software/stash/downloads/binary
 ARG SERVERPORT=8080
 ENV SERVERPORT=${SERVERPORT}
